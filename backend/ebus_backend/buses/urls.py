@@ -1,19 +1,18 @@
-from django.urls import path
+from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     RouteViewSet,
     BusViewSet,
     ScheduleViewSet,
-    SeatAvailabilityView
+    SeatViewSet
 )
 
 router = DefaultRouter()
-router.register(r'routes', RouteViewSet, basename='route')
-router.register(r'buses', BusViewSet, basename='bus')
-router.register(r'schedules', ScheduleViewSet, basename='schedule')
+router.register(r'routes', RouteViewSet)
+router.register(r'buses', BusViewSet)
+router.register(r'schedules', ScheduleViewSet)
+router.register(r'seats', SeatViewSet)
 
 urlpatterns = [
-    path('seats/availability/', SeatAvailabilityView.as_view(), name='seat-availability'),
+    path('', include(router.urls)),
 ]
-
-urlpatterns += router.urls

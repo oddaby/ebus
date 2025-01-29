@@ -1,61 +1,80 @@
-from django.shortcuts import render
-
-# Create your views here.
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
+from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from .models import Route, Bus, Schedule, Seat
-from .serializers import (
-    RouteSerializer, BusSerializer,
-    ScheduleSerializer, SeatSerializer,
-    SeatAvailabilitySerializer
-)
+from django.db.models import Q
 from django.utils import timezone
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
+from .models import Route, Bus, Schedule, Seat
+from .serializers import RouteSerializer, BusSerializer, ScheduleSerializer, SeatSerializer
 
 class RouteViewSet(viewsets.ModelViewSet):
     queryset = Route.objects.all()
     serializer_class = RouteSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
-    
-    def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [IsAdminUser()]
-        return super().get_permissions()
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+    @action(detail=True, methods=['get'])
+    def schedules(self, request, pk=None):
+        route = self.get_object()
+        schedules = Schedule.objects.filter(
+            route=route,
+            departure_time__gte=timezone.now()
+        )
+        serializer = ScheduleSerializer(schedules, many=True)
+        return Response(serializer.data)
 
 class BusViewSet(viewsets.ModelViewSet):
     queryset = Bus.objects.all()
     serializer_class = BusSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly, IsAdminUser]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    @action(detail=True, methods=['get'])
+    def schedules(self, request, pk=None):
+        bus = self.get_object()
+        schedules = Schedule.objects.filter(
+            bus=bus,
+            departure_time__gte=timezone.now()
+        )
+        serializer = ScheduleSerializer(schedules, many=True)
+        return Response(serializer.data)
 
 class ScheduleViewSet(viewsets.ModelViewSet):
     queryset = Schedule.objects.all()
     serializer_class = ScheduleSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        params = self.request.query_params
-        
-        if 'route_id' in params:
-            queryset = queryset.filter(route_id=params['route_id'])
-        if 'date' in params:
-            queryset = queryset.filter(departure_time__date=params['date'])
-            
+        queryset = Schedule.objects.all()
+        origin = self.request.query_params.get('origin', None)
+        destination = self.request.query_params.get('destination', None)
+        date = self.request.query_params.get('date', None)
+
+        if origin and destination:
+            queryset = queryset.filter(
+                route__origin__iexact=origin,
+                route__destination__iexact=destination
+            )
+        if date:
+            queryset = queryset.filter(departure_time__date=date)
+
         return queryset
 
-class SeatAvailabilityView(APIView):
-    def get(self, request):
-        serializer = SeatAvailabilitySerializer(data=request.query_params)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=400)
-            
-        schedule_id = serializer.validated_data['schedule_id']
-        date = serializer.validated_data['date']
-        
-        seats = Seat.objects.filter(
-            schedule_id=schedule_id,
-            is_available=True
-        )
+    @action(detail=True, methods=['get'])
+    def seats(self, request, pk=None):
+        schedule = self.get_object()
+        seats = schedule.seats.all()
         serializer = SeatSerializer(seats, many=True)
         return Response(serializer.data)
+
+class SeatViewSet(viewsets.ModelViewSet):
+    queryset = Seat.objects.all()
+    serializer_class = SeatSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        queryset = Seat.objects.all()
+        schedule_id = self.request.query_params.get('schedule', None)
+        if schedule_id:
+            queryset = queryset.filter(schedule_id=schedule_id)
+        return queryset
