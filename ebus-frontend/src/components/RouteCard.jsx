@@ -75,10 +75,10 @@ const RouteCard = ({ route, searchParams }) => {
 
           {/* CTA Button */}
           <Link
-            to={`/booking/${route.id}`}
+            to={`/routes/${route.id}`}
             className="mt-6 block w-full px-6 py-3.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-center font-medium rounded-2xl transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 active:scale-98"
           >
-            View Schedule
+            View Details
           </Link>
         </div>
       </div>
