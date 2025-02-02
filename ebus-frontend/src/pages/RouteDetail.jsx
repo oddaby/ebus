@@ -78,9 +78,10 @@ const RouteDetails = () => {
     setShowBookingModal(true);
   };
 
+  // Update: use the actual id value when navigating
   const confirmBooking = () => {
     setShowBookingModal(false);
-    navigate(`/buses/schedules/`);
+    navigate(`/buses/schedules/${id}`);
   };
 
   const cancelBooking = () => {

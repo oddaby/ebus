@@ -5,6 +5,11 @@ from django.db.models import Q
 from django.utils import timezone
 from .models import Route, Bus, Schedule, Seat
 from .serializers import RouteSerializer, BusSerializer, ScheduleSerializer, SeatSerializer
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Seat
+from .serializers import SeatSerializer
 
 class RouteViewSet(viewsets.ModelViewSet):
     queryset = Route.objects.all()
@@ -78,3 +83,18 @@ class SeatViewSet(viewsets.ModelViewSet):
         if schedule_id:
             queryset = queryset.filter(schedule_id=schedule_id)
         return queryset
+    
+
+
+
+
+class BookSeatView(APIView):
+    def post(self, request, schedule_id):
+        seat_id = request.data.get("seat_id")
+        try:
+            seat = Seat.objects.get(id=seat_id, schedule_id=schedule_id, is_available=True)
+            seat.is_available = False
+            seat.save()
+            return Response({"message": "Seat booked successfully!"}, status=status.HTTP_200_OK)
+        except Seat.DoesNotExist:
+            return Response({"error": "Seat not available"}, status=status.HTTP_400_BAD_REQUEST)

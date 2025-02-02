@@ -1,5 +1,5 @@
 // src/store/slices/scheduleSlice.js
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
 import api from '../../services/api';
 
 // Validate and transform the schedules data
@@ -14,7 +14,7 @@ const validateScheduleData = (data) => {
 
       return {
         id: schedule.id?.toString() || '',
-        route: schedule.route?.toString() || '',
+        route: schedule.route !== undefined ? schedule.route.toString() : '',
         bus: schedule.bus?.toString() || '',
         departure_time: schedule.departure_time || '',
         arrival_time: schedule.arrival_time || '',
@@ -35,6 +35,7 @@ export const fetchSchedules = createAsyncThunk(
   'schedules/fetchSchedules',
   async (_, { rejectWithValue }) => {
     try {
+      // Using relative path because your api instance is configured with baseURL 'http://localhost:8000/api/'
       const response = await api.get('buses/schedules/');
       try {
         return validateScheduleData(response.data);
@@ -91,18 +92,25 @@ const scheduleSlice = createSlice({
   },
 });
 
-// Export the reducers as actions
 export const { clearSchedules, clearScheduleError } = scheduleSlice.actions;
 
-// Selectors
-export const selectAllSchedules = (state) => state.schedules.list;
+// Regular (non-memoized) selector (if needed)
+// export const selectAllSchedules = (state) => state.schedules.list;
+
+// Memoized selector to filter schedules by a specific route ID
+export const selectSchedulesByRouteId = createSelector(
+  // Input selectors:
+  [(state) => state.schedules.list, (_, routeId) => routeId],
+  // Result function:
+  (list, routeId) =>
+    list.filter(
+      (schedule) =>
+        // Ensure schedule.route is defined; if not, use empty string.
+        (schedule.route ? schedule.route.toString() : '') === routeId.toString()
+    )
+);
+
 export const selectSchedulesStatus = (state) => state.schedules.status;
 export const selectSchedulesError = (state) => state.schedules.error;
-
-// Selector to filter schedules by a specific route ID
-export const selectSchedulesByRouteId = (state, routeId) =>
-  state.schedules.list.filter(
-    (schedule) => schedule.route.toString() === routeId.toString()
-  );
 
 export default scheduleSlice.reducer;

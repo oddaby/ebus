@@ -77,7 +77,7 @@ const Navbar = () => {
 
   const mainNavigation = useMemo(() => [
     { name: 'Home', href: '/', icon: HomeIcon, current: location.pathname === '/' },
-    { name: 'Routes', href: '/routes', icon: MapIcon, current: location.pathname === '/routes' },
+    { name: 'Routes', href: '/', icon: MapIcon, current: location.pathname === '/routes' },
     { name: 'Schedule', href: '/schedule', icon: TicketIcon, current: location.pathname === '/schedule' },
   ], [location.pathname]);
 
