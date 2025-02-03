@@ -4,11 +4,9 @@ from .views import BookingViewSet
 
 # Create a router and register the BookingViewSet
 router = DefaultRouter()
-router.register(r'bookings', BookingViewSet, basename='booking')
+
+router.register(r'schedules/(?P<schedule_id>\d+)/bookings', BookingViewSet, basename='schedule-bookings')
 
 urlpatterns = [
-    path('', include(router.urls)),  # Include all the routes from the router
     path('', include(router.urls)),
-    path('bookings/<int:pk>/', BookingViewSet.as_view({'get': 'retrieve'}), name='booking-detail'),
-
 ]

@@ -101,6 +101,8 @@ const App = () => {
             }
           />
 
+          
+
           {/* Fallback Route: Redirect unknown paths to Home */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
